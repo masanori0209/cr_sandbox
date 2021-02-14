@@ -1,0 +1,72 @@
+version: '3'
+
+services:
+
+  web:
+    build:
+      context: ./
+      dockerfile: ./web/Dockerfile
+    environment:
+      TZ: 'Asia/Tokyo'
+    ports:
+      - 8000:8000
+      - 8001:8001
+    volumes:
+      - ./cms/public:/var/www/public/
+
+  crawler:
+    build:
+      context: ./crawler
+      dockerfile: Dockerfile
+    command: 'jupyter lab --allow-root'
+    ports:
+      - 8888:8888
+    volumes:
+      - ./crawler:/crawler/
+      - ./crawler/.jupyter:/root/.jupyter
+      - ./crawler/notebook:/usr/src/app/notebook
+
+  cms:
+    build:
+      context: ./cms
+    command: 'sh /srv/app/run.sh'
+    environment:
+      DATABASE_CLIENT: mysql
+      DATABASE_HOST: db
+      DATABASE_PORT: 3306
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: strapi
+      DATABASE_SSL: 'false'
+    volumes:
+      - ./cms:/srv/app
+    ports:
+      - 1337:1337
+    depends_on:
+      - db
+
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=strapi
+      - MYSQL_ROOT_HOST=%
+    volumes:
+      - ./db/db-datadir:/var/lib/mysql
+      - ./db/init.d:/docker-entrypoint-initdb.d
+      - ./db/work/my.cnf:/etc/mysql/my.cnf
+      - ./db/work:/work
+
+  app:
+    build:
+      context: ./app
+    command: 'sh /node/app/run.sh'
+    environment:
+      - HOST=0.0.0.0
+    volumes:
+      - ./app:/node/app
+    ports:
+      - 3000:3000
