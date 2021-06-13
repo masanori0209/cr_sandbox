@@ -1,5 +1,8 @@
 # cr_sandbox
+
 CMSとクローリング試し
+
+NuxtはJAMStackを採用してみる
 
 ## 立ち上げ方
 
